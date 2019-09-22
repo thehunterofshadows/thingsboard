@@ -13,7 +13,7 @@
 
 
 //TOKEN - used to determine which device this is.
-#define TOKEN "6HvdfTTn3wVxMmitPpp1"  //Floater
+#define TOKEN "CccQ5Gm6k3W58sMCPvDZ"  //Floater2
 //Used to adjust the sensors as needed.  This one for example seemed 2 degrees lower than the rest.
 
 //Used to calibrate this sensors tempteture
@@ -88,7 +88,7 @@ void setup()
   lastSend = 0;
   
   //Dallas
-  sensors.begin();
+  //sensors.begin();
 }
 
 void loop()
@@ -115,8 +115,8 @@ void getAndSendTemperatureAndHumidityData()
   
   // Read temperature as Celsius (the default)
   //float temperature = dht.readTemperature();
-  sensors.requestTemperatures();
-  float temperature = ((1.8 * bme.readTemperature + 32) + calibration);
+  //sensors.requestTemperatures();
+  float temperature = ((1.8 * bme.readTemperature() + 32) + calibration);
 
   // Check if any reads failed and exit early (to try again).
   if (isnan(temperature)) {
@@ -133,7 +133,7 @@ void getAndSendTemperatureAndHumidityData()
   Serial.println(" *F ");
 
   tb.sendTelemetryFloat("temperature", temperature);
-  tb.sendTelemetryFloat("pressure", *bme.readPressure() / 100.0F));
+  tb.sendTelemetryFloat("pressure", bme.readPressure() / 100.0F);
   tb.sendTelemetryFloat("altitude", bme.readAltitude(SEALEVELPRESSURE_HPA));
   tb.sendTelemetryFloat("humidity", bme.readHumidity());
   //tb.sendTelemetryFloat("humidity", humidity);
