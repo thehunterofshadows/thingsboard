@@ -1,23 +1,48 @@
 //#include "DHT.h"
 #include <ESP8266WiFi.h>
 #include <ThingsBoard.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
+
+//Dallas
+//#include <OneWire.h>
+//#include <DallasTemperature.h>
+
+//BME280
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
 
 
 //TOKEN - used to determine which device this is.
-#define TOKEN "GtjJi7TtXgoanRbw5Wxp"
+#define TOKEN "6HvdfTTn3wVxMmitPpp1"  //Floater
 //Used to adjust the sensors as needed.  This one for example seemed 2 degrees lower than the rest.
-float calibration = 2;
 
+//Used to calibrate this sensors tempteture
+float calibration = 0;
+
+/*#include <SPI.h>
+#define BME_SCK 14
+#define BME_MISO 12
+#define BME_MOSI 13
+#define BME_CS 15*/
+
+#define SEALEVELPRESSURE_HPA (1013.25)
+
+Adafruit_BME280 bme; // I2C
+//Adafruit_BME280 bme(BME_CS); // hardware SPI
+//Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK); // software SPI
+
+unsigned long delayTime;
+
+
+//Dallas
 //DSB setup
 // GPIO where the DS18B20 is connected to
-const int oneWireBus = 5;
+//const int oneWireBus = 5;
 // Setup a oneWire instance to communicate with any OneWire devices
-OneWire oneWire(oneWireBus);
+//OneWire oneWire(oneWireBus);
 
 // Pass our oneWire reference to Dallas Temperature sensor 
-DallasTemperature sensors(&oneWire);     
+//DallasTemperature sensors(&oneWire);     
 
 
 #define WIFI_AP "Brewers_2.4G"
@@ -43,10 +68,26 @@ unsigned long lastSend;
 void setup()
 {
   Serial.begin(115200);
-  //dht.begin();
+  
+  bool status;
+
+  // default settings
+  // (you can also pass in a Wire library object like &Wire2)
+  status = bme.begin(0x76);  
+  if (!status) {
+    Serial.println("Could not find a valid BME280 sensor, check wiring!");
+    while (1);
+  }
+
+  Serial.println("-- Default Test --");
+  //delayTime = 1000;
+
+  Serial.println();
   delay(10);
   InitWiFi();
   lastSend = 0;
+  
+  //Dallas
   sensors.begin();
 }
 
@@ -75,7 +116,7 @@ void getAndSendTemperatureAndHumidityData()
   // Read temperature as Celsius (the default)
   //float temperature = dht.readTemperature();
   sensors.requestTemperatures();
-  float temperature = (sensors.getTempFByIndex(0) + calibration);
+  float temperature = ((1.8 * bme.readTemperature + 32) + calibration);
 
   // Check if any reads failed and exit early (to try again).
   if (isnan(temperature)) {
@@ -92,6 +133,9 @@ void getAndSendTemperatureAndHumidityData()
   Serial.println(" *F ");
 
   tb.sendTelemetryFloat("temperature", temperature);
+  tb.sendTelemetryFloat("pressure", *bme.readPressure() / 100.0F));
+  tb.sendTelemetryFloat("altitude", bme.readAltitude(SEALEVELPRESSURE_HPA));
+  tb.sendTelemetryFloat("humidity", bme.readHumidity());
   //tb.sendTelemetryFloat("humidity", humidity);
 }
 
