@@ -4,11 +4,19 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+//3rd Bedroom, Master Bedroom, Basement
+//3rd Bedroom
 
 //TOKEN - used to determine which device this is.
-#define TOKEN "GtjJi7TtXgoanRbw5Wxp"
-//Used to adjust the sensors as needed.  This one for example seemed 2 degrees lower than the rest.
-float calibration = 2;
+//#define TOKEN "kEm7Ts2TukJXdzrXwvyj" //3rd bedroom
+//#define TOKEN "GtjJi7TtXgoanRbw5Wxp" //Master
+#define TOKEN "vujHQAl7x6j5yg8J3TgZ" //Basement
+
+
+//Used to adjust the sensors as needed.  value of 2 would increase the temp 2
+//float calibration = 0; //3rd bedroom
+//float calibration = 2.5; //Master
+float calibration = 1; //Basement
 
 //DSB setup
 // GPIO where the DS18B20 is connected to
@@ -28,7 +36,7 @@ DallasTemperature sensors(&oneWire);
 #define DHTPIN 2
 #define DHTTYPE DHT22
 
-char thingsboardServer[] = "192.168.1.67";
+char thingsboardServer[] = "192.168.1.111";
 
 WiFiClient wifiClient;
 
@@ -76,10 +84,17 @@ void getAndSendTemperatureAndHumidityData()
   //float temperature = dht.readTemperature();
   sensors.requestTemperatures();
   float temperature = (sensors.getTempFByIndex(0) + calibration);
+  float minTemp = 50;
 
   // Check if any reads failed and exit early (to try again).
   if (isnan(temperature)) {
     Serial.println("Failed to read from DHT sensor!");
+    return;
+  }
+
+  //Checks to see if the device read a low number.  Seems to happen every so often throwing averages way off
+  if (temperature < minTemp) {
+    Serial.println("Failed to read from DHT sensor!  Too Low!");
     return;
   }
 
